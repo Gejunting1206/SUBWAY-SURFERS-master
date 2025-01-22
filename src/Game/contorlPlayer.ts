@@ -17,6 +17,38 @@ enum Side {
     FRONTDOWN, // 前下方
     UP // 上方
 }
+class AudioPlayer {
+    private audio: HTMLAudioElement;
+    
+    constructor(audioPath: string) {
+      this.audio = new Audio(audioPath);
+    }
+    
+    play() {
+      this.audio.play();
+    }
+    
+    pause() {
+      this.audio.pause();
+    }
+    
+    stop() {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+    }
+    
+    setCurrentTime(time: number) {
+      this.audio.currentTime = time;
+    }
+    
+    getDuration(): number {
+      return this.audio.duration;
+    }
+    
+    getIsPlaying(): boolean {
+      return !this.audio.paused;
+    }
+  }
 export class ControlPlayer extends EventEmitter {
     model: THREE.Group; // 玩家模型
     mixer: THREE.AnimationMixer; // 动画混合器
@@ -164,6 +196,9 @@ export class ControlPlayer extends EventEmitter {
                 if (!this.gameStart || this.status === playerStatus.DIE) {
                     return;
                 }
+                const path = "public/assets/audio/jump.mp3"
+                const audio_player = new AudioPlayer(path)
+                audio_player.play()
                 this.key = 'ArrowUp';
                 this.downCollide = false;
                 this.isJumping = true;
@@ -195,6 +230,8 @@ export class ControlPlayer extends EventEmitter {
                     setTimeout(() => {
                         this.runlookback = false;
                     }, 1040);
+                    const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
+                    auduo_player.play()
                     this.smallMistake += 1;
                     return;
                 }
@@ -217,6 +254,8 @@ export class ControlPlayer extends EventEmitter {
                     this.smallMistake += 1;
                     return;
                 }
+                const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
+                auduo_player.play()
                 this.originLocation = this.model.position.clone();
                 this.lastPosition = this.model.position.clone().x;
                 this.targetPosition += roadWidth / 3;
@@ -246,6 +285,8 @@ handleLeftRightMove() {
         // removehandle处理单次碰撞
         // 处理左右碰撞回弹效果
         if ((this.leftCollide || this.rightCollide) && this.removeHandle) {
+            const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
+            auduo_player.play()
             this.smallMistake += 1;
             this.emit('collision');
             showToast('撞到障碍物！请注意！！！');
@@ -440,6 +481,10 @@ handleLeftRightMove() {
                 break;
             }
         }
+        if (coinCollected){
+            const auduo_player = new AudioPlayer("public/assets/audio/jump.mp3")
+            auduo_player.play()
+        }
     }
     // 控制人物的动作变化
     changeStatus(delta: number) {
@@ -514,19 +559,23 @@ handleLeftRightMove() {
             if (locateObstacal < 0.75) {
                 this.status = playerStatus.DIE;
                 this.gameStatus = GAME_STATUS.END;
+                const auduo_player = new AudioPlayer("public/assets/audio/gameover.mp3")
+                auduo_player.play()
                 showToast('你死了！请重新开始游戏！');
                 this.game.emit('gameStatus', this.gameStatus);
             }
             else {
                 this.fallingSpeed += 0.4;
                 this.model.position.y += obstacal * (1 - locateObstacal);
+                const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
+                auduo_player.play()
                 this.smallMistake += 1;
                 this.emit('collision');
                 showToast('撞到障碍物！请注意！！！');
                 this.firstFrontCollide.isCollide = false;
                 setTimeout(() => {
                     this.firstFrontCollide.isCollide = true;
-                }, 400);
+                }, 400); 
             }
         }
     }
@@ -557,6 +606,8 @@ handleLeftRightMove() {
         if (mistake >= 2 && this.gameStatus !== GAME_STATUS.END) {
             this.status = playerStatus.DIE;
             this.gameStatus = GAME_STATUS.END;
+            const auduo_player = new AudioPlayer("public/assets/audio/gameover.mp3")
+            auduo_player.play()
             this.game.emit('gameStatus', this.gameStatus);
         }
     }
