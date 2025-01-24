@@ -136,6 +136,7 @@ export class ControlPlayer extends EventEmitter {
         this.isJumping = false;
         this.startGame(currentAction, model);
         this.addAnimationListener();
+        this.addTouchListener(); // 添加触摸事件监听
         this.initRaycaster();
     }
     // 开始游戏初始化
@@ -230,8 +231,6 @@ export class ControlPlayer extends EventEmitter {
                     setTimeout(() => {
                         this.runlookback = false;
                     }, 1040);
-                    const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
-                    auduo_player.play()
                     this.smallMistake += 1;
                     return;
                 }
@@ -254,8 +253,6 @@ export class ControlPlayer extends EventEmitter {
                     this.smallMistake += 1;
                     return;
                 }
-                const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
-                auduo_player.play()
                 this.originLocation = this.model.position.clone();
                 this.lastPosition = this.model.position.clone().x;
                 this.targetPosition += roadWidth / 3;
@@ -274,40 +271,179 @@ export class ControlPlayer extends EventEmitter {
             }
         });
     }
-// 左右移动控制
-handleLeftRightMove() {
-    const targetPosition = this.targetPosition;
-    const lastPosition = this.lastPosition;
-    if (Math.abs(targetPosition - lastPosition) < 1) {
-        this.removeHandle = true;
+    // 添加触摸事件监听
+    addTouchListener() {
+        let startX: number, startY: number;
+        let isTouching: boolean = false;
+
+        window.addEventListener('touchstart', (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isTouching = true;
+            }
+        });
+
+        window.addEventListener('touchmove', (e: TouchEvent) => {
+            if (e.touches.length === 1 && isTouching) {
+                const moveX = e.touches[0].clientX - startX;
+                const moveY = e.touches[0].clientY - startY;
+                const moveThreshold = 10;
+
+                if (Math.abs(moveX) > Math.abs(moveY)) {
+                    // 左右滑动
+                    if (Math.abs(moveX) > moveThreshold) {
+                        if (moveX > 0) {
+                            // 向右滑动
+                            this.key = 'ArrowRight';
+                            this.handleRightMove();
+                        } else {
+                            // 向左滑动
+                            this.key = 'ArrowLeft';
+                            this.handleLeftMove();
+                        }
+                    }
+                } else {
+                    // 上下滑动
+                    if (Math.abs(moveY) > moveThreshold) {
+                        if (moveY > 0) {
+                            // 向下滑动
+                            this.key = 'ArrowDown';
+                            this.handleDownMove();
+                        } else {
+                            // 向上滑动
+                            this.key = 'ArrowUp';
+                            this.handleUpMove();
+                        }
+                    } else {
+                         // 点击事件
+                        if (this.status !== playerStatus.JUMP && this.status !== playerStatus.FALL && this.downCollide) {
+                            this.key = 'ArrowUp';
+                            this.handleUpMove();
+                        }
+                    }
+                }
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            isTouching = false;
+            this.key = '';
+        });
     }
-    if (targetPosition !== lastPosition) {
-        // removehandle处理单次碰撞
-        // 处理左右碰撞回弹效果
-        if ((this.leftCollide || this.rightCollide) && this.removeHandle) {
-            const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
-            auduo_player.play()
-            this.smallMistake += 1;
+
+    // 处理向左移动
+    handleLeftMove() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        if (this.way === 1) {
+            this.runlookback = true;
             this.emit('collision');
             showToast('撞到障碍物！请注意！！！');
-            this.targetPosition = this.originLocation.x;
-            this.removeHandle = false;
-            if (targetPosition > lastPosition) {
-                this.way -= 1;
-            }
-            else {
-                this.way += 1;
-            }
+            setTimeout(() => {
+                this.runlookback = false;
+            }, 1040);
+            this.smallMistake += 1;
+            return;
         }
-        // 平滑移动逻辑
-        const moveSpeed = 0.15; // 移动速度
-        const diff = targetPosition - lastPosition;
-        if (Math.abs(diff) > 0.0001) {
-            this.model.position.x += diff * moveSpeed;
-            this.lastPosition += diff * moveSpeed;
+        this.way -= 1;
+        this.originLocation = this.model.position.clone();
+        this.lastPosition = this.model.position.clone().x;
+        this.targetPosition -= roadWidth / 3;
+    }
+
+    // 处理向右移动
+    handleRightMove() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        if (this.way === 3) {
+            this.runlookback = true;
+            this.emit('collision');
+            showToast('撞到障碍物！请注意！！！');
+            setTimeout(() => {
+                this.runlookback = false;
+            }, 1040);
+            this.smallMistake += 1;
+            return;
+        }
+        this.originLocation = this.model.position.clone();
+        this.lastPosition = this.model.position.clone().x;
+        this.targetPosition += roadWidth / 3;
+        this.way += 1;
+    }
+
+    // 处理向上移动
+    handleUpMove() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        if (
+            this.status !== playerStatus.JUMP &&
+            this.status !== playerStatus.FALL &&
+            this.downCollide
+        ) {
+            const path = "public/assets/audio/jump.mp3";
+            const audio_player = new AudioPlayer(path);
+            audio_player.play();
+            this.downCollide = false;
+            this.isJumping = true;
+            setTimeout(() => {
+                this.isJumping = false;
+            }, 50);
+            this.fallingSpeed += this.jumpHight * 0.1;
         }
     }
-}
+
+    // 处理向下移动
+    handleDownMove() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        if (!this.roll && this.status !== playerStatus.ROLL) {
+            this.roll = true;
+            setTimeout(() => {
+                this.roll = false;
+            }, 620);
+            this.fallingSpeed = -5 * 0.1;
+        }
+    }
+    // 左右移动控制
+    handleLeftRightMove() {
+        const targetPosition = this.targetPosition;
+        const lastPosition = this.lastPosition;
+        if (Math.abs(targetPosition - lastPosition) < 1) {
+            this.removeHandle = true;
+        }
+        if (targetPosition !== lastPosition) {
+            // removehandle处理单次碰撞
+            // 处理左右碰撞回弹效果
+            if ((this.leftCollide || this.rightCollide) && this.removeHandle) {
+                this.smallMistake += 1;
+                this.emit('collision');
+                showToast('撞到障碍物！请注意！！！');
+                this.targetPosition = this.originLocation.x;
+                this.removeHandle = false;
+                if (targetPosition > lastPosition) {
+                    this.way -= 1;
+                } else {
+                    this.way += 1;
+                }
+            }
+            // 平滑移动逻辑
+            const moveSpeed = 0.15; // 移动速度
+            const diff = targetPosition - lastPosition;
+            if (Math.abs(diff) > 0.0001) {
+                this.model.position.x += diff * moveSpeed;
+                this.lastPosition += diff * moveSpeed;
+            }
+        }
+        if (this.leftCollide || this.rightCollide) {
+            const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3");
+            auduo_player.play();
+        }
+    }
     // 上下移动控制
     handleUpdownMove() {
     }
@@ -321,8 +457,7 @@ handleLeftRightMove() {
             this.collideCheck(Side.FRONT, position, 2);
             this.collideCheck(Side.LEFT, position, 1);
             this.collideCheck(Side.RIGHT, position, 1);
-        }
-        catch (error) {
+        } catch (error) {
             console.log(error);
         }
     }
@@ -332,8 +467,7 @@ handleLeftRightMove() {
         position: THREE.Vector3,
         far: number = 2.5
     ) {
-        let coinCollected = false; // 新增标志，表示是否已经收集到金币
-        const {x, y, z} = position;
+        const { x, y, z } = position;
         switch (side) {
             case Side.DOWN:
                 // 设置向下射线的起点和长度
@@ -387,7 +521,7 @@ handleLeftRightMove() {
                     [intersectPlane, intersectObstacal]
                 )[0]?.object.name;
                 this.raycasterDown.ray.origin = originDown;
-                const c2 = this.raycasterDown.intersectObjects(
+                 const c2 = this.raycasterDown.intersectObjects(
                     [intersectPlane, intersectObstacal]
                 )[0]?.object.name;
                 c1 || c2 ? (this.downCollide = true) : (this.downCollide = false);
@@ -397,23 +531,25 @@ handleLeftRightMove() {
                 // 检测是否撞到金币
                 const r1 = this.raycasterFront.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
-                if (r1Name === 'coin' && !coinCollected) {
+                 if (r1Name === 'coin') {
                     r1.object.visible = false;
+                    this.scene.remove(r1.object);
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
                 this.raycasterFront.far = 1.5;
                 // 检测是否撞到障碍物
                 const r2 = this.raycasterFront.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r2Name = r2?.object.name;
-                if (r2Name === 'coin' && !coinCollected) {
+                if (r2Name === 'coin') {
+                    this.scene.remove(r2.object);
                     r2.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 // 撞击点信息
-                const c2 = r2Name && r2Name !== 'coin';
+                 const c2 = r2Name && r2Name !== 'coin';
                 this.frontCollideInfo = r1 || r2;
                 c1 || c2 ? (this.frontCollide = true) : (this.frontCollide = false);
                 break;
@@ -422,10 +558,11 @@ handleLeftRightMove() {
                 // 检测是否撞到金币
                 const r1 = this.raycasterFrontDown.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
-                if (r1Name === 'coin' && !coinCollected) {
+                if (r1Name === 'coin') {
+                    this.scene.remove(r1.object);
                     r1.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 // 检测是否撞到障碍物
                 const c1 = r1Name && r1Name !== 'coin';
@@ -436,20 +573,22 @@ handleLeftRightMove() {
                 // 检测是否撞到金币
                 const r1 = this.raycasterLeft.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
-                if (r1Name === 'coin' && !coinCollected) {
-                    r1.object.visible = false;
+                if (r1Name === 'coin') {
+                    this.scene.remove(r1.object);
+                     r1.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
                 this.raycasterLeft.ray.origin = origin;
                 // 检测是否撞到障碍物
                 const r2 = this.raycasterLeft.intersectObjects([intersectObstacal, intersectCoin])[0];
-                const r2Name = r2?.object.name;
-                if (r2Name === 'coin' && !coinCollected) {
+                 const r2Name = r2?.object.name;
+                if (r2Name === 'coin') {
+                    this.scene.remove(r2.object);
                     r2.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 // 撞击点信息
                 const c2 = r2Name && r2Name !== 'coin';
@@ -460,30 +599,28 @@ handleLeftRightMove() {
                 // 检测是否撞到金币
                 const r1 = this.raycasterRight.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
-                if (r1Name === 'coin' && !coinCollected) {
+                if (r1Name === 'coin') {
+                    this.scene.remove(r1.object);
                     r1.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
                 this.raycasterRight.ray.origin = origin;
                 // 检测是否撞到障碍物
                 const r2 = this.raycasterRight.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r2Name = r2?.object.name;
-                if (r2Name === 'coin' && !coinCollected) {
+                if (r2Name === 'coin') {
+                    this.scene.remove(r2.object);
                     r2.object.visible = false;
                     this.coin += 1;
-                    coinCollected = true; // 标记已收集到金币
+                    return; // 收集到金币后立即返回
                 }
                 // 撞击点信息
                 const c2 = r2Name && r2Name !== 'coin';
                 c1 || c2 ? (this.rightCollide = true) : (this.rightCollide = false);
                 break;
             }
-        }
-        if (coinCollected){
-            const auduo_player = new AudioPlayer("public/assets/audio/jump.mp3")
-            auduo_player.play()
         }
     }
     // 控制人物的动作变化
@@ -504,7 +641,7 @@ handleLeftRightMove() {
         else if (this.fallingSpeed > 0) {
             this.status = playerStatus.JUMP;
         }
-        else if (this.fallingSpeed < 0 && this.key !== 's') {
+        else if (this.fallingSpeed < 0 && this.key !== 'ArrowDown') {
             this.status = playerStatus.FALL;
         }
         else if (this.roll) {
@@ -559,23 +696,19 @@ handleLeftRightMove() {
             if (locateObstacal < 0.75) {
                 this.status = playerStatus.DIE;
                 this.gameStatus = GAME_STATUS.END;
-                const auduo_player = new AudioPlayer("public/assets/audio/gameover.mp3")
-                auduo_player.play()
                 showToast('你死了！请重新开始游戏！');
                 this.game.emit('gameStatus', this.gameStatus);
             }
             else {
                 this.fallingSpeed += 0.4;
                 this.model.position.y += obstacal * (1 - locateObstacal);
-                const auduo_player = new AudioPlayer("public/assets/audio/bump.mp3")
-                auduo_player.play()
                 this.smallMistake += 1;
                 this.emit('collision');
                 showToast('撞到障碍物！请注意！！！');
                 this.firstFrontCollide.isCollide = false;
                 setTimeout(() => {
                     this.firstFrontCollide.isCollide = true;
-                }, 400); 
+                }, 400);
             }
         }
     }
@@ -606,8 +739,6 @@ handleLeftRightMove() {
         if (mistake >= 2 && this.gameStatus !== GAME_STATUS.END) {
             this.status = playerStatus.DIE;
             this.gameStatus = GAME_STATUS.END;
-            const auduo_player = new AudioPlayer("public/assets/audio/gameover.mp3")
-            auduo_player.play()
             this.game.emit('gameStatus', this.gameStatus);
         }
     }
@@ -621,7 +752,7 @@ handleLeftRightMove() {
         this.coinRotate();
         this.checkGameStatus();
         if (this.gameStatus === GAME_STATUS.START) {
-            this.game.emit('gameData', {score: this.score += 0.01, coin: this.coin, mistake: this.smallMistake});
+            this.game.emit('gameData', {score: this.score += 0.05, coin: this.coin, mistake: this.smallMistake});
         }
         // 重力或者跳跃
         if (this.isJumping || !this.downCollide) {

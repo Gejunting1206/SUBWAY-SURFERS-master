@@ -70,8 +70,8 @@ export default class Game extends EventEmitter {
             this.emit('progress', {type: 'onProgress', url: url, itemsLoaded: itemsLoaded, itemsTotal: itemsTotal});
         };
 
-        THREE.DefaultLoadingManager.onError = () => {
-            this.emit('progress', {type: 'error'});
+        THREE.DefaultLoadingManager.onError = (url) => {
+            this.emit('progress', {type: 'error', url: url});
         };
     }
     removelistener() {

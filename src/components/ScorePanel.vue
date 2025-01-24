@@ -7,9 +7,6 @@
           <div>
               <span style="font-weight: 700;">金币数:{{ coin }}</span>
           </div>
-          <div>
-              <span style="font-weight: 700;">错误次数:{{ mistake }}</span>
-          </div>
       </div>
   </div>
 </template>
@@ -32,16 +29,24 @@ const props = defineProps({
 }
 
 .score_panel {
-  height: 100px;
-  width: 300px;
+  height: 80px;
+  width: 250px;
   position: absolute;
-  right: 0;
+  right: 10px;
+  top: 10px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #333;
+  background: linear-gradient(to bottom, #3498db, #2980b9);
   color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, .3);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  padding: 5px;
+}
+
+.score_panel > div {
+  margin: 3px 0;
+  font-size: 16px;
 }
 </style>

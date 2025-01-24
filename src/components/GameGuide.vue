@@ -37,12 +37,23 @@ const textCompute = computed(() => {
   justify-content: center;
   align-items: center;
   z-index: 999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .message {
   font-size: 24px;
-  color: white;
+  color: #fff;
   text-align: center;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .key {
@@ -50,5 +61,7 @@ const textCompute = computed(() => {
   color: white;
   padding: 5px 10px;
   border-radius: 5px;
+  font-size: 20px;
+  margin: 0 5px;
 }
 </style>

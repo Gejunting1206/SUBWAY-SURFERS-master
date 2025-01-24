@@ -1,10 +1,8 @@
 <template>
   <div>
     <div v-if="!isReady" class="loading">
-      <div class="loading-anima aaa">
-        <div></div>
-        <div></div>
-        <div></div>
+      <div class="progress-bar">
+        <div class="progress" :style="{ width: progress + '%' }"></div>
       </div>
       <div>正在加载资源：{{ loadingData.url }}</div>
       <div>已加载{{ loadingData.itemsLoaded || 0 }}/{{ loadingData.itemsTotal || 0 }}</div>
@@ -38,6 +36,11 @@ let loadingData: any = ref({});
 const exp_canvas = ref<HTMLElement>();
 const showGuide = computed(() => {
   return gameStatus.value !== 'start';
+});
+
+const progress = computed(() => {
+  if (!loadingData.value.itemsTotal) return 0;
+  return (loadingData.value.itemsLoaded / loadingData.value.itemsTotal) * 100;
 });
 
 onMounted(() => {
@@ -82,99 +85,19 @@ onUnmounted(() => {
   background-color: #fff;
 }
 
-.loading-anima,
-.loading-anima>div {
-  position: relative;
-  box-sizing: border-box;
-}
-
-.aaa {
-  display: block;
-  font-size: 0;
-  color: white;
-}
-
-.loading-anima.la-dark {
-  color: #333;
-}
-
-.loading-anima>div {
-  display: inline-block;
-  float: none;
-  background-color: black;
-  border: 0 solid black;
-}
-
-.loading-anima {
-  width: 54px;
-  height: 18px;
-}
-
-.aaa>div {
-  width: 10px;
+.progress-bar {
+  width: 200px;
   height: 10px;
-  margin: 4px;
-  border-radius: 100%;
-  animation: ball-pulse-sync .6s infinite ease-in-out;
+  background-color: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
 }
 
-.loading-anima>div:nth-child(1) {
-  animation-delay: -.14s;
-}
-
-.loading-anima>div:nth-child(2) {
-  animation-delay: -.07s;
-}
-
-.loading-anima>div:nth-child(3) {
-  animation-delay: 0s;
-}
-
-.loading-anima.la-sm {
-  width: 26px;
-  height: 8px;
-}
-
-.loading-anima.la-sm>div {
-  width: 4px;
-  height: 4px;
-  margin: 2px;
-}
-
-.loading-anima.la-2x {
-  width: 108px;
-  height: 36px;
-}
-
-.loading-anima.la-2x>div {
-  width: 20px;
-  height: 20px;
-  margin: 8px;
-}
-
-.loading-anima.la-3x {
-  width: 162px;
-  height: 54px;
-}
-
-.loading-anima.la-3x>div {
-  width: 30px;
-  height: 30px;
-  margin: 12px;
-}
-
-@keyframes ball-pulse-sync {
-  33% {
-    transform: translateY(100%);
-  }
-
-  66% {
-    transform: translateY(-100%);
-  }
-
-  100% {
-    transform: translateY(0);
-  }
+.progress {
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 0.3s ease;
 }
 
 .experience {
@@ -196,4 +119,3 @@ canvas {
   top: 0;
 }
 </style>
-./Game/init./Game

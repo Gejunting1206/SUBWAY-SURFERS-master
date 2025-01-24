@@ -222,6 +222,7 @@ export default class Environment {
             }
         });
         this.setThingName(coin, 'coin');
+        coin
         while (coinBlock > houseZ - roadLength) {
             if (z >= -1 && z < 2 && increase2) {
                 z++;
