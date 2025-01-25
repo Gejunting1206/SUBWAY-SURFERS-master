@@ -465,7 +465,7 @@ export class ControlPlayer extends EventEmitter {
     collideCheck(
         side: Side,
         position: THREE.Vector3,
-        far: number = 2.5
+        far: number = 0.1
     ) {
         const { x, y, z } = position;
         switch (side) {
@@ -532,9 +532,12 @@ export class ControlPlayer extends EventEmitter {
                 const r1 = this.raycasterFront.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
                  if (r1Name === 'coin') {
-                    r1.object.visible = false;
-                    this.scene.remove(r1.object);
-                    this.coin += 1;
+                    if (!r1.object.userData.collected) {
+                        r1.object.userData.collected = true;
+                        r1.object.visible = false;
+                        this.scene.remove(r1.object);
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
@@ -543,9 +546,12 @@ export class ControlPlayer extends EventEmitter {
                 const r2 = this.raycasterFront.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r2Name = r2?.object.name;
                 if (r2Name === 'coin') {
-                    this.scene.remove(r2.object);
-                    r2.object.visible = false;
-                    this.coin += 1;
+                    if (!r2.object.userData.collected) {
+                        r2.object.userData.collected = true;
+                        this.scene.remove(r2.object);
+                        r2.object.visible = false;
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 // 撞击点信息
@@ -559,9 +565,12 @@ export class ControlPlayer extends EventEmitter {
                 const r1 = this.raycasterFrontDown.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
                 if (r1Name === 'coin') {
-                    this.scene.remove(r1.object);
-                    r1.object.visible = false;
-                    this.coin += 1;
+                    if (!r1.object.userData.collected) {
+                        r1.object.userData.collected = true;
+                        this.scene.remove(r1.object);
+                        r1.object.visible = false;
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 // 检测是否撞到障碍物
@@ -574,9 +583,12 @@ export class ControlPlayer extends EventEmitter {
                 const r1 = this.raycasterLeft.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
                 if (r1Name === 'coin') {
-                    this.scene.remove(r1.object);
-                     r1.object.visible = false;
-                    this.coin += 1;
+                    if (!r1.object.userData.collected) {
+                        r1.object.userData.collected = true;
+                        this.scene.remove(r1.object);
+                        r1.object.visible = false;
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
@@ -585,9 +597,12 @@ export class ControlPlayer extends EventEmitter {
                 const r2 = this.raycasterLeft.intersectObjects([intersectObstacal, intersectCoin])[0];
                  const r2Name = r2?.object.name;
                 if (r2Name === 'coin') {
-                    this.scene.remove(r2.object);
-                    r2.object.visible = false;
-                    this.coin += 1;
+                    if (!r2.object.userData.collected) {
+                        r2.object.userData.collected = true;
+                        this.scene.remove(r2.object);
+                        r2.object.visible = false;
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 // 撞击点信息
@@ -600,9 +615,12 @@ export class ControlPlayer extends EventEmitter {
                 const r1 = this.raycasterRight.intersectObjects([intersectObstacal, intersectCoin])[0];
                 const r1Name = r1?.object.name;
                 if (r1Name === 'coin') {
-                    this.scene.remove(r1.object);
-                    r1.object.visible = false;
-                    this.coin += 1;
+                    if (!r1.object.userData.collected) {
+                        r1.object.userData.collected = true;
+                        this.scene.remove(r1.object);
+                        r1.object.visible = false;
+                        this.coin += 1;
+                    }
                     break; // 收集到金币后立即返回
                 }
                 const c1 = r1Name && r1Name !== 'coin';
@@ -696,7 +714,6 @@ export class ControlPlayer extends EventEmitter {
             if (locateObstacal < 0.75) {
                 this.status = playerStatus.DIE;
                 this.gameStatus = GAME_STATUS.END;
-                showToast('你死了！请重新开始游戏！');
                 this.game.emit('gameStatus', this.gameStatus);
             }
             else {

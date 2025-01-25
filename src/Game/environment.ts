@@ -118,13 +118,16 @@ export default class Environment {
             {scene: train},
             {scene: kerbStone},
             {scene: coin},
+            {scene: slope},
         ] = await Promise.all([
             await load3DModel('/assets/glb/train.glb'), // 加载火车模型
             await load3DModel('/assets/glb/kerb_stone.glb'), // 加载路障模型
             await load3DModel('/assets/glb/coin.glb'), // 加载金币模型
+            await load3DModel('/assets/glb/slope.glb'), // 加载斜坡模型
         ]);
         this.setThingName(train, 'train');
         this.setThingName(kerbStone, 'kerbStone');
+        this.setThingName(slope, 'slope');
         const planGeometry = new THREE.PlaneGeometry(5, 10);
         const planGeometry1 = new THREE.PlaneGeometry(5, 19);
         const planGeometry2 = new THREE.PlaneGeometry(5, 18);
@@ -134,6 +137,8 @@ export default class Environment {
         });
         train.scale.set(0.3, 0.3, 0.3);
         const trainSizeZ = this.comupteBox(train).z;
+        slope.scale.set(0.5, 0.5, 0.5);
+        const slopeSizeZ = this.comupteBox(slope).z;
 
         let obstacle = houseZ - 20;
         let i = -1;
@@ -154,6 +159,8 @@ export default class Environment {
                 }
             }
             this.cloneModel(train, threeRoad[i], 0, obstacle, Math.PI, obstacalGroup);
+            // 删除斜坡
+            // this.cloneModel(slope, threeRoad[i] + 2, 0, obstacle + trainSizeZ / 2 - 1, 0, obstacalGroup);
             const plane = new THREE.Mesh(planGeometry1, planMaterial);
             const plane1 = new THREE.Mesh(planGeometry2, planMaterial);
             const plane2 = new THREE.Mesh(planGeometry2, planMaterial);
