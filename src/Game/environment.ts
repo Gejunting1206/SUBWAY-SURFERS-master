@@ -1,6 +1,6 @@
-import Game from '.';
+ import Game from '.';
 import * as THREE from 'three'; // 导入 three.js 库
-import {textureload, load3DModel} from '@/Game/utils/model';
+import {textureload, load3DModel, cache} from '@/Game/utils/model';
 import {shuffleArray} from '@/Game/utils/random';
 // import {OctreeHelper} from 'three/examples/jsm/helpers/OctreeHelper.js';
 export const roadWidth = 15; // 道路宽度
@@ -27,6 +27,8 @@ export default class Environment {
     house3Scene: any; // 房子3场景
     house4Scene: any; // 房子4场景
     house5Scene: any; // 房子5场景
+    changeRoad: () => void = () => {};
+    trainZRanges: {min: number, max: number}[] = []; // 新增属性，用于存储火车 z 坐标范围
 
     constructor() {
         if (Environment.instance) {
@@ -36,6 +38,7 @@ export default class Environment {
         this.game = new Game();
         this.scene = this.game.scene;
         this.z = -1 * (roadLength / 2) + 10;
+        this.changeRoad = () => {};
         this.startGame();
     }
     // 开始游戏环境配置
@@ -117,7 +120,7 @@ export default class Environment {
         const [
             {scene: train},
             {scene: kerbStone},
-            {scene: coin},
+            ,
             {scene: slope},
         ] = await Promise.all([
             await load3DModel('/assets/glb/train.glb'), // 加载火车模型
@@ -216,8 +219,8 @@ export default class Environment {
             obstacleBlock -= (blockZ + 25);
         }
         let coinBlock = houseZ - 5;
-        let z = -1;
-        let increase2 = true;
+        let currentRoadIndex = Math.floor(Math.random() * 3); // 初始随机道路索引
+        const coin = (await load3DModel('/assets/glb/coin.glb')).scene.clone();
         coin.scale.set(10, 10, 10);
         coin.traverse((child: any) => {
             if (child.isMesh) {
@@ -229,26 +232,20 @@ export default class Environment {
             }
         });
         this.setThingName(coin, 'coin');
-        coin
         while (coinBlock > houseZ - roadLength) {
-            if (z >= -1 && z < 2 && increase2) {
-                z++;
-            }
-            else if (z === 2) {
-                increase2 = false;
-                z--;
-            }
-            else if (!increase2) {
-                z--;
-                if (z === -1) {
-                    increase2 = true;
-                }
-            }
-            this.cloneModel(coin, threeRoad[z], 1.5, coinBlock, Math.PI, sceneGroup);
-            const randomInt = Math.floor(Math.random() * (4 - 2 + 1)) + 2;
-
+            this.cloneModel(coin, threeRoad[currentRoadIndex], 1.5, coinBlock, Math.PI, sceneGroup);
+            const randomInt = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
             coinBlock -= randomInt;
+            // 随机切换到相邻的道路
+            const newIndex = currentRoadIndex + (Math.random() > 0.5 ? 1 : -1);
+            currentRoadIndex = (newIndex + 3) % 3;
         }
+        
+        // 添加一个改变道路的函数
+        this.changeRoad = () => {
+            const newIndex = currentRoadIndex + (Math.random() > 0.5 ? 1 : -1);
+            currentRoadIndex = (newIndex + 3) % 3;
+        };
         this.obstacal.push(obstacalGroup);
         this.coin.push(sceneGroup);
         modelGroup.add(obstacalGroup, sceneGroup);

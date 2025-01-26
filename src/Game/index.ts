@@ -25,6 +25,7 @@ export default class Game extends EventEmitter {
     player: Player | undefined;
     clock: THREE.Clock = new THREE.Clock();
     windowResizeFn!: (e: Event) => void;
+    lastRoadChangeTime: number | undefined;
     constructor(canvas?: HTMLElement) {
         super();
         if (Game.instance) {
@@ -60,6 +61,14 @@ export default class Game extends EventEmitter {
         stats.update();
         this.renderer.update();
         this.player?.update && this.player.update(delta);
+        // 每隔一段时间改变道路
+        if (this.lastRoadChangeTime === undefined) {
+            this.lastRoadChangeTime = this.time.elapsed;
+        }
+        if (this.time.elapsed - this.lastRoadChangeTime > 2000) {
+            this.environment?.changeRoad();
+            this.lastRoadChangeTime = this.time.elapsed;
+        }
     }
     resource() {
         THREE.DefaultLoadingManager.onLoad = () => {
